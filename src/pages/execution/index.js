@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import { Progress } from 'react-sweet-progress';
+import "react-sweet-progress/lib/style.css";
 
 import './styles.css';
 
@@ -77,6 +79,22 @@ export default class Execution extends Component {
         this.setState({ executions });
     }
 
+    resolveStatus({status}) {
+        if(status === 'Started') {
+            return 'active';
+        } else if(status === 'Finished') {
+            return 'success';
+        } else if(status === 'Finished with errors') {
+            return 'error';
+        }
+        return status;
+    }
+
+    percentage({total, current}) {
+        if(current === 0 || total === 0) return 0;
+        return (current / total) * 100;
+    }
+
     render() {
         const { executions } = this.state;
         return (
@@ -84,11 +102,21 @@ export default class Execution extends Component {
                 <div className="execution-list">
                     {Object.keys(executions).length === 0 ? <h1>No Executions!</h1> : Object.keys(executions).map(k => executions[k]).map(execution => (
                         <article key={`${execution.id}-${execution.status}`}>
-                            <strong>Execution: {execution.id}</strong>
-                            <p>DataInputId: {execution.dataInputId}</p>
-                            <p>Status: {execution.status}</p>
-                            <p>Total de arquivos: {execution.total}</p>
-                            <p>Arquivos processados: {execution.current}</p>
+                            <div className="execution-progress">
+                                <Progress 
+                                    type="circle" 
+                                    width={60} 
+                                    percent={this.percentage(execution)}
+                                    status={this.resolveStatus(execution)}
+                                />
+                            </div>
+                            <div className="execution-info">
+                                <strong>Execution: {execution.id}</strong>
+                                <p>DataInputId: {execution.dataInputId}</p>
+                                <p>Status: {execution.status}</p>
+                                <p>Total de arquivos: {execution.total}</p>
+                                <p>Arquivos processados: {execution.current}</p>
+                            </div>
                         </article>
                     ))}
                 </div>
