@@ -9,7 +9,7 @@ export default class Execution extends Component {
         super();
 
         this.state = {
-            executions: [],
+            executions: {},
         };
         
         this.ws = new WebSocket(URL);
@@ -33,11 +33,40 @@ export default class Execution extends Component {
     }
 
     addMessage = (message) => {
-        console.log("Mensagem recebida de execution ", message.executionId);
-        
+        console.log(`Mensagem recebida de execution ${message.executionId}`, message);
+
         let { executions } = this.state;
 
-        this.setState({ executions: executions.concat(message) });
+        let { executionId, eventName } = message;
+
+        if(eventName === 'NEW_EXECUTION') {
+            executions[executionId] = {
+                id: executionId,
+                dataInputId: message.dataInputId,
+                status: 'Created',
+                total: 0,
+                current: 0,
+                createDate: message.createDate
+            };
+        } else {
+            let execution = executions[executionId];
+
+            if (eventName === 'FILE_CREATED_EXECUTION') {
+                execution.total = execution.total + 1;
+            } else if (eventName === 'START_EXECUTION') {
+                execution.status = 'Started';
+                execution.startDate = message.startDate;
+            } else if (eventName === 'FILE_PROCESSED_EXECUTION') {
+                execution.current = message.current;
+                if(execution.total !== message.total) {
+                    execution.total = message.total;
+                }
+            } else if (eventName === 'EXECUTION_FINISHED') {
+                execution.status = 'Finished';
+            }
+        }
+
+        this.setState({ executions });
     }
 
     render() {
@@ -45,11 +74,13 @@ export default class Execution extends Component {
         return (
             <div className="content">
                 <div className="execution-list">
-                    {executions.length === 0 ? <h1>No Executions!</h1> : executions.map(execution => (
-                        <article key={`${execution.executionId}-${execution.eventName}`}>
-                            <strong>Execution: {execution.executionId}</strong>
-                            <p>Status: {execution.eventName}</p>
-                            {execution.fileId == undefined ? <br /> : <p>File: {execution.fileId}</p>}
+                    {Object.keys(executions).length === 0 ? <h1>No Executions!</h1> : Object.keys(executions).map(k => executions[k]).map(execution => (
+                        <article key={`${execution.id}-${execution.status}`}>
+                            <strong>Execution: {execution.id}</strong>
+                            <p>DataInputId: {execution.dataInputId}</p>
+                            <p>Status: {execution.status}</p>
+                            <p>Total de arquivos: {execution.total}</p>
+                            <p>Arquivos processados: {execution.current}</p>
                         </article>
                     ))}
                 </div>
