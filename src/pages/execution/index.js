@@ -46,7 +46,8 @@ export default class Execution extends Component {
                 status: 'Created',
                 total: 0,
                 current: 0,
-                createDate: message.createDate
+                createDate: message.createDate,
+                errors: [],
             };
         } else {
             let execution = executions[executionId];
@@ -63,6 +64,13 @@ export default class Execution extends Component {
                 }
             } else if (eventName === 'EXECUTION_FINISHED') {
                 execution.status = 'Finished';
+            } else if (eventName === 'EXECUTION_ERROR') {
+                execution.status = 'Finished with errors';
+                execution.errors.concat(message.errors);
+            } else if (eventName === 'INTERRUPT_EXECUTION') {
+                execution.status = 'Interrupted';
+            } else if (eventName === 'INTERRUPT_FILE_EXECUTION') {
+                execution.errors.push(`File ${message.fileId} Interrupted`);
             }
         }
 
