@@ -1,37 +1,58 @@
 import React, { Component } from 'react';
 
-import api from '../../services/api';
 import './styles.css';
 
-// const URL = "http://localhost:8082/ws"
+const URL = "ws://cortexws32:8082/ws";
 
-export default class Main extends Component {
-    state = {
-        executions: [],
-    };
+export default class Execution extends Component {
+    constructor() {
+        super();
 
-    // ws = new WebSocket(URL);
+        this.state = {
+            executions: [],
+        };
+        
+        this.ws = new WebSocket(URL);
 
-    componentDidMount() {
-        this.loadExecutions();
+        this.ws.onopen = () => {
+            // on connecting, do nothing but log it to the console
+            console.log('connected')
+        }
+    
+        this.ws.onmessage = evt => {
+            // on receiving a message, add it to the list of messages
+            const message = JSON.parse(evt.data)
+            this.addMessage(message)
+        }
+    
+        this.ws.onclose = () => {
+            console.log('disconnected')
+            // automatically try to reconnect on connection loss
+            this.ws = new WebSocket(URL);
+        }
     }
 
-    loadExecutions = async () => {
-        const data = await api.get(`/execution`);
+    addMessage = (message) => {
+        console.log("Mensagem recebida de execution ", message.executionId);
+        
+        let { executions } = this.state;
 
-        this.setState({ executions: data });
-    };
+        this.setState({ executions: executions.concat(message) });
+    }
 
     render() {
         const { executions } = this.state;
         return (
-            <div className="execution-list">
-                {executions.length === 0 ? <h1>No Executions!</h1> : executions.map(execution => (
-                    <article key={execution.id}>
-                        <strong>{execution.id}</strong>
-                        <p>{execution.dataInputId}</p>
-                    </article>
-                ))}
+            <div className="content">
+                <div className="execution-list">
+                    {executions.length === 0 ? <h1>No Executions!</h1> : executions.map(execution => (
+                        <article key={`${execution.executionId}-${execution.eventName}`}>
+                            <strong>Execution: {execution.executionId}</strong>
+                            <p>Status: {execution.eventName}</p>
+                            {execution.fileId == undefined ? <br /> : <p>File: {execution.fileId}</p>}
+                        </article>
+                    ))}
+                </div>
             </div>
         );
     }
