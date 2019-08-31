@@ -4,7 +4,7 @@ import './styles.css';
 const Header = () => (
     <header id="main-header">
         <div className="header">
-            JSHunt
+            LoadManager v1.0
         </div>
     </header>
 );
